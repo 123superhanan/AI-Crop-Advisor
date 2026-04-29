@@ -175,7 +175,7 @@ uvicorn main:app --reload
 
 ## Demo
 
-Add screenshots or video link here
+ screenshots or video will be link here
 
 ---
 

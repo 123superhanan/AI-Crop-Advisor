@@ -1,0 +1,20 @@
+/backend
+  /controllers
+    authController.js
+    predictionController.js
+    adminController.js
+  /routes
+    authRoutes.js
+    predictionRoutes.js
+    adminRoutes.js
+  /models
+    User.js
+    Prediction.js
+    Notification.js
+  /middleware
+    auth.js ,errorHandler.js
+  /services
+    aiService.js
+  /config
+    db.js
+  server.js

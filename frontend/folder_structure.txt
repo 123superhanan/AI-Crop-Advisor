@@ -1,0 +1,8 @@
+/frontend
+  /components
+    Navbar.jsx, UploadForm.jsx ,ResultCard.jsx
+  /pages
+    Dashboard.jsx ,History.jsx ,Admin.jsx
+  /services
+    api.js
+  App.jsx

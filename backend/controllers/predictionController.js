@@ -13,7 +13,8 @@ export const createPrediction = async (req, res) => {
 // Get all predictions
 export const getPredictions = async (req, res) => {
   try {
-    const data = (await Prediction.find()).sort({ createdAt: -1 });
+    const data = await Prediction.find().sort({ createdAt: -1 }); // ← Fixed
+
     res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });

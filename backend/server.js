@@ -1,7 +1,11 @@
 import cors from 'cors';
 import dotenv from 'dotenv';
+import 'dotenv/config';
 import express from 'express';
+import connectDB from './config/db.js';
 import predictionRoutes from './routes/predictionRoutes.js';
+
+connectDB();
 dotenv.config();
 
 const app = express();

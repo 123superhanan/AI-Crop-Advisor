@@ -1,83 +1,121 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import './Navbar.css';
+// src/components/Navbar.jsx
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const location = useLocation(); // Used to highlight the active link
-
-  const isActive = path => location.pathname === path;
-
   return (
-    <nav className="navbar">
-      <div className="navbar-container">
-        {/* Logo - Bold & Tight */}
-        <Link to="/" className="logo" style={{ textDecoration: 'none' }}>
-          <h2>
-            AgriVision<span className="glow">AI</span>
-          </h2>
-        </Link>
+    <nav style={styles.navbar}>
+      <div style={styles.container}>
+        {/* Logo */}
+        <div style={styles.logo}>AGRIVISION</div>
 
-        {/* Desktop Menu - High End Minimal */}
-        <ul className="nav-links">
-          <li>
-            <Link to="/" className={isActive('/') ? 'active' : ''}>
-              Dashboard
-            </Link>
-          </li>
-          <li>
-            <Link to="/history" className={isActive('/history') ? 'active' : ''}>
-              History
-            </Link>
-          </li>
-          <li>
-            <Link to="/admin" className={isActive('/admin') ? 'active' : ''}>
-              Admin
-            </Link>
-          </li>
-        </ul>
+        {/* Navigation Links */}
+        <div style={styles.navLinks}>
+          <Link to="/" style={styles.linkActive}>
+            Dashboard
+          </Link>
+          <Link to="/history" style={styles.link}>
+            History
+          </Link>
+          <Link to="/admin" style={styles.link}>
+            Reports
+          </Link>
+        </div>
 
-        {/* Action Area */}
-        <div className="nav-right">
-          <button className="login-btn">Sign In</button>
-          <div className="user-avatar">
-            <span style={{ fontSize: '14px' }}>H</span>
-          </div>
-
-          {/* Mobile Toggle - Clean Icon */}
-          <button className="menu-toggle" onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? '✕' : '☰'}
-          </button>
+        <div style={styles.userSection}>
+          <span style={styles.userName}>John Doe</span>
+          <div style={styles.avatar}>JD</div>
         </div>
       </div>
-
-      {/* Mobile Menu - Slide Down Overlay */}
-      {isOpen && (
-        <div className="mobile-overlay">
-          <ul className="mobile-menu">
-            <li>
-              <Link to="/" onClick={() => setIsOpen(false)}>
-                Dashboard
-              </Link>
-            </li>
-            <li>
-              <Link to="/history" onClick={() => setIsOpen(false)}>
-                History
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin" onClick={() => setIsOpen(false)}>
-                Admin
-              </Link>
-            </li>
-            <li>
-              <button className="mobile-login-btn">Sign In</button>
-            </li>
-          </ul>
-        </div>
-      )}
     </nav>
   );
+};
+
+const styles = {
+  navbar: {
+    backgroundColor: '#1a1a1a',
+    borderBottom: '1px solid #333',
+    padding: '1rem 5%',
+    position: 'sticky',
+    top: 0,
+    zIndex: 1000,
+  },
+
+  container: {
+    maxWidth: '1400px',
+    margin: '0 auto',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  logo: {
+    fontSize: '26px',
+    fontWeight: '900',
+    letterSpacing: '2px',
+    color: '#ffffff',
+  },
+
+  navLinks: {
+    display: 'flex',
+    gap: '2.5rem',
+  },
+
+  link: {
+    color: '#aaaaaa',
+    textDecoration: 'none',
+    fontWeight: '500',
+    fontSize: '1.02rem',
+  },
+
+  linkActive: {
+    color: '#ffffff',
+    textDecoration: 'none',
+    fontWeight: '600',
+    fontSize: '1.02rem',
+    borderBottom: '2px solid #0066ff',
+    paddingBottom: '4px',
+  },
+
+  rightSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px',
+  },
+
+  newAnalysisBtn: {
+    backgroundColor: '#0066ff',
+    color: 'white',
+    border: 'none',
+    padding: '10px 24px',
+    borderRadius: '6px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    fontSize: '0.95rem',
+  },
+
+  userSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+
+  userName: {
+    color: '#ccc',
+    fontSize: '0.95rem',
+  },
+
+  avatar: {
+    width: '42px',
+    height: '42px',
+    backgroundColor: '#444',
+    color: '#fff',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 'bold',
+    fontSize: '1rem',
+  },
 };
 
 export default Navbar;

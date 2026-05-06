@@ -1,8 +1,8 @@
 // src/pages/Dashboard.jsx
 import { useEffect, useState } from 'react';
 import ResultCard from '../components/ResultCard';
-import UploadForm from '../components/UploadForm'; // We'll create this next
 import { predictionService } from '../services/api';
+import UploadForm from '../components/UploadForm';
 
 function Dashboard() {
   const [predictions, setPredictions] = useState([]);
@@ -26,75 +26,70 @@ function Dashboard() {
   };
 
   return (
-    <div style={styles.dashboardContainer}>
-      {/* SIDEBAR */}
+    <div style={styles.container}>
+      {/* Sidebar */}
       <aside style={styles.sidebar}>
-        <div style={styles.logo}>
-          AgriVision <span style={styles.aiTag}>AI</span>
-        </div>
+        <div style={styles.logo}>AGRIVISION</div>
 
         <nav style={styles.nav}>
-          <div style={styles.navItemActive}>Overview</div>
+          <div style={styles.navActive}>Dashboard</div>
           <div style={styles.navItem} onClick={() => setShowUpload(true)}>
             New Analysis
           </div>
-          <div style={styles.navItem}>My Crops</div>
+          <div style={styles.navItem}>Crop Management</div>
           <div style={styles.navItem}>History</div>
+          <div style={styles.navItem}>Reports</div>
           <div style={styles.navItem}>Settings</div>
         </nav>
-
-        <div style={styles.sidebarFooter}>
-          <p>© 2026 AgriVision AI</p>
-        </div>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main style={styles.mainContent}>
-        <header style={styles.topNav}>
-          <div>
-            <h1 style={styles.welcome}>Dashboard / ڈیش بورڈ</h1>
-            <p style={styles.subtext}>Welcome back! Here's what's happening in your fields.</p>
-          </div>
-
-          <div style={styles.userSection}>
-            <div style={styles.userCircle}>U</div>
+      {/* Main Content */}
+      <main style={styles.main}>
+        <header style={styles.header}>
+          <h1 style={styles.title}>Operations Dashboard</h1>
+          <div style={styles.userInfo}>
+            <span>Welcome back, User</span>
+            <div style={styles.avatar}>JD</div>
           </div>
         </header>
 
-        {/* Stats */}
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <span style={styles.statLabel}>Total Analysis</span>
-            <span style={styles.statValue}>{predictions.length}</span>
+        {/* Stats Bar */}
+        <div style={styles.statsBar}>
+          <div style={styles.stat}>
+            <div style={styles.statLabel}>TOTAL PREDICTIONS</div>
+            <div style={styles.statNumber}>{predictions.length}</div>
           </div>
-          <div style={styles.statCard}>
-            <span style={styles.statLabel}>System Status</span>
-            <span style={{ ...styles.statValue, color: '#00ff88' }}>Healthy</span>
+          <div style={styles.stat}>
+            <div style={styles.statLabel}>LAST ANALYSIS</div>
+            <div style={styles.statNumber}>2h ago</div>
+          </div>
+          <div style={styles.stat}>
+            <div style={styles.statLabel}>ACCURACY</div>
+            <div style={styles.statNumber}>94.2%</div>
           </div>
         </div>
 
-        {/* Recent Analysis */}
-        <div style={styles.feedContainer}>
+        {/* Recent Analysis Section */}
+        <div style={styles.section}>
           <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>Recent Analysis</h2>
-            <button style={styles.uploadBtn} onClick={() => setShowUpload(true)}>
-              + New Upload
+            <h2>Recent Analysis</h2>
+            <button style={styles.newBtn} onClick={() => setShowUpload(true)}>
+              + NEW ANALYSIS
             </button>
           </div>
 
-          <div style={styles.gridWrapper}>
+          <div style={styles.grid}>
             {loading ? (
-              <p>Loading...</p>
+              <p>Loading data...</p>
             ) : predictions.length > 0 ? (
               predictions.map(pred => <ResultCard key={pred._id} prediction={pred} />)
             ) : (
-              <p>No predictions yet. Upload your first image!</p>
+              <p>No analysis found yet.</p>
             )}
           </div>
         </div>
       </main>
 
-      {/* Upload Modal */}
       {showUpload && (
         <UploadForm onClose={() => setShowUpload(false)} onSuccess={fetchPredictions} />
       )}
@@ -103,156 +98,123 @@ function Dashboard() {
 }
 
 const styles = {
-  dashboardContainer: {
+  container: {
     display: 'flex',
     height: '100vh',
-    backgroundColor: '#0a0a0a',
-    color: '#e0e0e0',
-    fontFamily: 'Inter, system-ui, sans-serif',
-    overflow: 'hidden',
+    backgroundColor: '#0f0f0f',
+    color: '#e5e5e5',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
   },
 
   sidebar: {
-    width: '280px',
-    backgroundColor: '#111111',
-    borderRight: '1px solid #222',
+    width: '260px',
+    backgroundColor: '#1a1a1a',
+    borderRight: '1px solid #333',
     padding: '30px 20px',
-    display: 'flex',
-    flexDirection: 'column',
   },
 
   logo: {
-    fontSize: '26px',
-    fontWeight: '800',
-    marginBottom: '50px',
-    letterSpacing: '-1px',
+    fontSize: '28px',
+    fontWeight: '900',
+    letterSpacing: '1px',
+    marginBottom: '60px',
+    color: '#ffffff',
   },
 
-  aiTag: {
-    color: '#00ff88',
-    fontSize: '20px',
-  },
-
-  nav: {
-    flex: 1,
-  },
-
+  nav: { display: 'flex', flexDirection: 'column', gap: '6px' },
   navItem: {
-    padding: '14px 18px',
-    marginBottom: '8px',
-    borderRadius: '10px',
-    cursor: 'pointer',
+    padding: '14px 20px',
     color: '#aaa',
-    transition: '0.3s',
+    borderRadius: '6px',
+    cursor: 'pointer',
   },
-
-  navItemActive: {
-    padding: '14px 18px',
-    marginBottom: '8px',
-    borderRadius: '10px',
-    backgroundColor: '#1a1a1a',
-    color: '#00ff88',
+  navActive: {
+    padding: '14px 20px',
+    backgroundColor: '#2a2a2a',
+    color: '#fff',
     fontWeight: '600',
+    borderRadius: '6px',
   },
 
-  sidebarFooter: {
-    color: '#555',
-    fontSize: '13px',
-    marginTop: 'auto',
-  },
-
-  mainContent: {
+  main: {
     flex: 1,
-    overflowY: 'auto',
     padding: '40px 50px',
+    overflowY: 'auto',
   },
 
-  topNav: {
+  header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '40px',
   },
 
-  welcome: {
+  title: {
     fontSize: '32px',
-    margin: 0,
     fontWeight: '700',
+    margin: 0,
   },
 
-  subtext: {
-    color: '#777',
-    marginTop: '6px',
-    fontSize: '15px',
+  userInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
   },
 
-  userCircle: {
-    width: '45px',
-    height: '45px',
-    backgroundColor: '#00ff88',
-    color: '#000',
+  avatar: {
+    width: '48px',
+    height: '48px',
+    backgroundColor: '#444',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 'bold',
-    fontSize: '18px',
   },
 
-  statsGrid: {
+  statsBar: {
     display: 'flex',
-    gap: '25px',
-    marginBottom: '40px',
+    gap: '30px',
+    marginBottom: '50px',
+    padding: '20px',
+    backgroundColor: '#1a1a1a',
+    borderRadius: '8px',
   },
 
-  statCard: {
-    flex: 1,
-    backgroundColor: '#111',
-    padding: '28px',
-    borderRadius: '16px',
-    border: '1px solid #222',
-  },
-
+  stat: { flex: 1 },
   statLabel: {
-    display: 'block',
-    color: '#666',
-    fontSize: '13px',
+    fontSize: '12px',
+    color: '#888',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    marginBottom: '8px',
+    letterSpacing: '1px',
+  },
+  statNumber: {
+    fontSize: '28px',
+    fontWeight: '700',
+    marginTop: '8px',
   },
 
-  statValue: {
-    fontSize: '36px',
-    fontWeight: '800',
-  },
-
+  section: {},
   sectionHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '20px',
+    marginBottom: '25px',
   },
 
-  sectionTitle: {
-    fontSize: '20px',
-    color: '#ddd',
-  },
-
-  uploadBtn: {
-    backgroundColor: '#00ff88',
-    color: '#000',
+  newBtn: {
+    backgroundColor: '#0066ff',
+    color: 'white',
     border: 'none',
-    padding: '10px 20px',
-    borderRadius: '8px',
-    fontWeight: 'bold',
+    padding: '12px 28px',
+    borderRadius: '6px',
+    fontWeight: '600',
     cursor: 'pointer',
   },
 
-  feedContainer: {},
-  gridWrapper: {
+  grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
     gap: '24px',
   },
 };

@@ -6,7 +6,7 @@ const Navbar = () => {
     <nav style={styles.navbar}>
       <div style={styles.container}>
         {/* Logo */}
-        <div style={styles.logo}>AGRIVISION</div>
+        <div style={styles.logo}>AGRIVISION (web)</div>
 
         {/* Navigation Links */}
         <div style={styles.navLinks}>
@@ -22,8 +22,8 @@ const Navbar = () => {
         </div>
 
         <div style={styles.userSection}>
-          <span style={styles.userName}>John Doe</span>
-          <div style={styles.avatar}>JD</div>
+          <span style={styles.userName}>Hanan</span>
+          <div style={styles.avatar}>H</div>
         </div>
       </div>
     </nav>

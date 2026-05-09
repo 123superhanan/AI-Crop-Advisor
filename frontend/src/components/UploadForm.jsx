@@ -1,12 +1,47 @@
 // src/components/UploadForm.jsx
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { predictionService } from '../services/api';
 
-const UploadForm = ({ onClose, onSuccess }) => {
+const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const [cropType, setCropType] = useState('general');
+  const [organicFarming, setOrganicFarming] = useState(false);
+  const [weather, setWeather] = useState('normal');
+  const [temperature, setTemperature] = useState(25);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleDrag = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        setImage(file);
+        setPreview(URL.createObjectURL(file));
+        setError('');
+        setAnalysisResult(null);
+      } else {
+        setError('Please upload an image file');
+      }
+    }
+  };
 
   const handleImageChange = e => {
     const file = e.target.files[0];
@@ -14,6 +49,7 @@ const UploadForm = ({ onClose, onSuccess }) => {
       setImage(file);
       setPreview(URL.createObjectURL(file));
       setError('');
+      setAnalysisResult(null);
     }
   };
 
@@ -26,55 +62,247 @@ const UploadForm = ({ onClose, onSuccess }) => {
 
     setLoading(true);
     setError('');
+    setAnalysisResult(null);
 
     const formData = new FormData();
-    formData.append('image', image); // Change field name if your backend expects different key
-    // formData.append('cropType', 'wheat'); // Add more fields if needed
+    formData.append('image', image);
+    formData.append('cropType', cropType);
+    formData.append('organicFarming', organicFarming);
+    formData.append('weather', weather);
+    formData.append('temperature', temperature);
+    formData.append('userId', userId);
 
     try {
-      await predictionService.createPrediction(formData); // Make sure your api.js supports FormData
-      onSuccess(); // Refresh dashboard
-      onClose(); // Close modal
+      const result = await predictionService.analyzeImage(formData);
+      setAnalysisResult(result);
+
+      if (result.success) {
+        await predictionService.savePrediction({
+          userId: userId,
+          crop: result.prediction.crop,
+          disease: result.prediction.disease,
+          confidence: result.prediction.confidence,
+          severity: result.severity,
+          recommendations: result.recommendations,
+        });
+
+        // Check if onSuccess is a function before calling
+        if (onSuccess && typeof onSuccess === 'function') {
+          setTimeout(() => {
+            onSuccess();
+            onClose();
+          }, 2000);
+        } else {
+          setTimeout(() => {
+            onClose();
+          }, 2000);
+        }
+      }
     } catch (err) {
       console.error(err);
-      setError('Failed to upload image. Please try again.');
+      setError('Failed to analyze image. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const resetForm = () => {
+    setImage(null);
+    setPreview(null);
+    setAnalysisResult(null);
+    setError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
+    <div style={styles.overlay} onClick={onClose}>
+      <div style={styles.modal} onClick={e => e.stopPropagation()}>
         <div style={styles.header}>
-          <h2>New Crop Analysis</h2>
+          <h2 style={styles.headerTitle}>New Crop Analysis</h2>
           <button style={styles.closeBtn} onClick={onClose}>
-            ✕
+            ×
           </button>
         </div>
 
         <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.uploadArea}>
-            {preview ? (
-              <img src={preview} alt="preview" style={styles.previewImage} />
-            ) : (
-              <div style={styles.placeholder}>
-                <p>📸</p>
-                <p>Drop image here or click to upload</p>
+          {/* Big Photo Upload Card */}
+          <div
+            style={{
+              ...styles.uploadCard,
+              ...(dragActive && styles.uploadCardDrag),
+              ...(preview && styles.uploadCardWithPreview),
+            }}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => !preview && fileInputRef.current?.click()}
+          >
+            {!preview ? (
+              <div style={styles.uploadContent}>
+                <div style={styles.uploadIcon}>📷</div>
+                <div style={styles.uploadTitle}>Drop your crop image here</div>
+                <div style={styles.uploadSubtitle}>or click to browse</div>
+                <div style={styles.uploadFormats}>Supports: JPG, PNG, JPEG (Max 10MB)</div>
+                <button
+                  type="button"
+                  style={styles.browseBtn}
+                  onClick={e => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  Browse Files
+                </button>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  style={styles.fileInput}
+                  style={styles.hiddenInput}
                 />
+              </div>
+            ) : (
+              <div style={styles.previewContainer}>
+                <img src={preview} alt="Preview" style={styles.previewImage} />
+                <div style={styles.previewOverlay}>
+                  <button
+                    type="button"
+                    style={styles.changeBtn}
+                    onClick={e => {
+                      e.stopPropagation();
+                      resetForm();
+                    }}
+                  >
+                    Change Image
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
-          {error && <p style={styles.error}>{error}</p>}
+          {/* Analysis Result Display */}
+          {analysisResult && (
+            <div style={styles.resultCard}>
+              <div style={styles.resultHeader}>
+                <span style={styles.resultIcon}>✓</span>
+                <span style={styles.resultTitle}>Analysis Complete!</span>
+              </div>
+              <div style={styles.resultContent}>
+                <div style={styles.resultDisease}>
+                  <strong>Detected:</strong> {analysisResult.prediction.disease}
+                </div>
+                <div style={styles.resultConfidence}>
+                  <strong>Confidence:</strong>{' '}
+                  {(analysisResult.prediction.confidence * 100).toFixed(1)}%
+                </div>
+                <div style={styles.resultSeverity}>
+                  <strong>Severity:</strong>
+                  <span
+                    style={{
+                      ...styles.severityBadge,
+                      backgroundColor: analysisResult.severity === 'High' ? '#ff4444' : '#ffaa00',
+                    }}
+                  >
+                    {analysisResult.severity}
+                  </span>
+                </div>
+                <div style={styles.resultTreatment}>
+                  <strong>Recommended:</strong> {analysisResult.recommendations.treatment_plan?.[0]}
+                </div>
+              </div>
+              <div style={styles.resultFooter}>Saving to dashboard...</div>
+            </div>
+          )}
 
-          <button type="submit" style={styles.submitBtn} disabled={loading || !image}>
-            {loading ? 'Analyzing...' : 'Start Analysis'}
+          {/* Farm Conditions Section */}
+          <div style={styles.conditionsSection}>
+            <h3 style={styles.sectionTitle}>Farm Conditions</h3>
+            <div style={styles.conditionsGrid}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Crop Type</label>
+                <select
+                  value={cropType}
+                  onChange={e => setCropType(e.target.value)}
+                  style={styles.select}
+                  disabled={loading}
+                >
+                  <option value="general">General Crop</option>
+                  <option value="wheat">Wheat</option>
+                  <option value="rice">Rice</option>
+                  <option value="corn">Corn</option>
+                  <option value="tomato">Tomato</option>
+                  <option value="potato">Potato</option>
+                  <option value="cotton">Cotton</option>
+                </select>
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Weather</label>
+                <select
+                  value={weather}
+                  onChange={e => setWeather(e.target.value)}
+                  style={styles.select}
+                  disabled={loading}
+                >
+                  <option value="normal">Normal</option>
+                  <option value="rainy">Rainy</option>
+                  <option value="dry">Dry</option>
+                  <option value="humid">Humid</option>
+                </select>
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Temperature (°C)</label>
+                <input
+                  type="number"
+                  value={temperature}
+                  onChange={e => setTemperature(e.target.value)}
+                  style={styles.input}
+                  disabled={loading}
+                />
+              </div>
+
+              <div style={styles.checkboxGroup}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={organicFarming}
+                    onChange={e => setOrganicFarming(e.target.checked)}
+                    disabled={loading}
+                    style={styles.checkbox}
+                  />
+                  Organic Farming Practice
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div style={styles.errorCard}>
+              <span style={styles.errorIcon}>!</span>
+              <span style={styles.errorText}>{error}</span>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            style={{
+              ...styles.submitBtn,
+              ...(loading && styles.submitBtnDisabled),
+            }}
+            disabled={loading || !image}
+          >
+            {loading ? (
+              <span style={styles.loadingSpinner}>
+                <span style={styles.spinner}></span>
+                Analyzing...
+              </span>
+            ) : (
+              'Start Analysis'
+            )}
           </button>
         </form>
       </div>
@@ -89,80 +317,318 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2000,
+    backdropFilter: 'blur(8px)',
   },
   modal: {
-    backgroundColor: '#111',
+    backgroundColor: '#1a1a1a',
     width: '90%',
-    maxWidth: '480px',
-    borderRadius: '16px',
-    border: '1px solid #222',
-    overflow: 'hidden',
+    maxWidth: '700px',
+    maxHeight: '90vh',
+    borderRadius: '20px',
+    border: '1px solid #333',
+    overflow: 'auto',
+    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
   },
   header: {
-    padding: '20px 25px',
-    borderBottom: '1px solid #222',
+    padding: '24px 30px',
+    borderBottom: '1px solid #333',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    position: 'sticky',
+    top: 0,
+    backgroundColor: '#1a1a1a',
+    zIndex: 10,
+  },
+  headerTitle: {
+    margin: 0,
+    fontSize: '24px',
+    color: '#fff',
   },
   closeBtn: {
     background: 'none',
     border: 'none',
     color: '#888',
-    fontSize: '24px',
+    fontSize: '28px',
     cursor: 'pointer',
+    width: '36px',
+    height: '36px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '50%',
   },
   form: {
-    padding: '30px 25px',
+    padding: '30px',
   },
-  uploadArea: {
-    border: '2px dashed #333',
-    borderRadius: '12px',
-    padding: '40px 20px',
-    textAlign: 'center',
-    marginBottom: '20px',
+  uploadCard: {
+    border: '3px dashed #444',
+    borderRadius: '16px',
+    marginBottom: '30px',
     cursor: 'pointer',
-    position: 'relative',
+    transition: 'all 0.3s ease',
+    minHeight: '320px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0f0f0f',
   },
-  placeholder: {
+  uploadCardDrag: {
+    borderColor: '#00ff88',
+    backgroundColor: '#1a2a1a',
+  },
+  uploadCardWithPreview: {
+    padding: '0',
+    border: 'none',
+    backgroundColor: 'transparent',
+  },
+  uploadContent: {
+    textAlign: 'center',
+    padding: '60px 40px',
+  },
+  uploadIcon: {
+    fontSize: '64px',
+    marginBottom: '20px',
+  },
+  uploadTitle: {
+    fontSize: '22px',
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: '10px',
+  },
+  uploadSubtitle: {
+    fontSize: '16px',
+    color: '#888',
+    marginBottom: '15px',
+  },
+  uploadFormats: {
+    fontSize: '12px',
     color: '#666',
+    marginBottom: '25px',
+  },
+  browseBtn: {
+    backgroundColor: '#0066ff',
+    color: '#fff',
+    border: 'none',
+    padding: '12px 30px',
+    borderRadius: '8px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  hiddenInput: {
+    display: 'none',
+  },
+  previewContainer: {
+    position: 'relative',
+    width: '100%',
+    borderRadius: '16px',
+    overflow: 'hidden',
   },
   previewImage: {
-    maxWidth: '100%',
-    maxHeight: '300px',
-    borderRadius: '10px',
+    width: '100%',
+    maxHeight: '400px',
+    objectFit: 'contain',
+    display: 'block',
   },
-  fileInput: {
+  previewOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
-    width: '100%',
-    height: '100%',
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     opacity: 0,
+  },
+  changeBtn: {
+    backgroundColor: '#fff',
+    color: '#000',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
     cursor: 'pointer',
   },
-  error: {
-    color: '#ff6666',
+  resultCard: {
+    backgroundColor: '#00ff8811',
+    border: '1px solid #00ff88',
+    borderRadius: '12px',
+    padding: '20px',
+    marginBottom: '25px',
+  },
+  resultHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '15px',
+  },
+  resultIcon: {
+    fontSize: '24px',
+  },
+  resultTitle: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    color: '#00ff88',
+  },
+  resultContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    marginBottom: '15px',
+  },
+  resultDisease: {
+    fontSize: '16px',
+    color: '#fff',
+  },
+  resultConfidence: {
+    fontSize: '14px',
+    color: '#ccc',
+  },
+  resultSeverity: {
+    fontSize: '14px',
+    color: '#ccc',
+  },
+  severityBadge: {
+    display: 'inline-block',
+    padding: '4px 10px',
+    borderRadius: '6px',
+    marginLeft: '10px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+  },
+  resultTreatment: {
+    fontSize: '14px',
+    color: '#ddd',
+  },
+  resultFooter: {
+    fontSize: '12px',
+    color: '#888',
     textAlign: 'center',
-    margin: '10px 0',
+    paddingTop: '10px',
+    borderTop: '1px solid #00ff8822',
+  },
+  conditionsSection: {
+    marginBottom: '25px',
+  },
+  sectionTitle: {
+    fontSize: '18px',
+    marginBottom: '15px',
+    color: '#fff',
+  },
+  conditionsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '15px',
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  label: {
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#aaa',
+  },
+  select: {
+    padding: '10px',
+    backgroundColor: '#2a2a2a',
+    color: '#fff',
+    border: '1px solid #444',
+    borderRadius: '8px',
+    fontSize: '14px',
+    cursor: 'pointer',
+  },
+  input: {
+    padding: '10px',
+    backgroundColor: '#2a2a2a',
+    color: '#fff',
+    border: '1px solid #444',
+    borderRadius: '8px',
+    fontSize: '14px',
+  },
+  checkboxGroup: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  checkboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    color: '#ddd',
+    cursor: 'pointer',
+  },
+  checkbox: {
+    width: '18px',
+    height: '18px',
+    cursor: 'pointer',
+  },
+  errorCard: {
+    backgroundColor: '#ff444411',
+    border: '1px solid #ff4444',
+    borderRadius: '8px',
+    padding: '12px',
+    marginBottom: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  errorIcon: {
+    fontSize: '20px',
+  },
+  errorText: {
+    color: '#ff8888',
+    fontSize: '14px',
   },
   submitBtn: {
     width: '100%',
-    padding: '14px',
+    padding: '16px',
     backgroundColor: '#00ff88',
     color: '#000',
     border: 'none',
-    borderRadius: '10px',
-    fontSize: '16px',
+    borderRadius: '12px',
+    fontSize: '18px',
     fontWeight: 'bold',
     cursor: 'pointer',
     marginTop: '10px',
   },
+  submitBtnDisabled: {
+    opacity: 0.6,
+    cursor: 'not-allowed',
+  },
+  loadingSpinner: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+  },
+  spinner: {
+    width: '20px',
+    height: '20px',
+    border: '2px solid #000',
+    borderTop: '2px solid transparent',
+    borderRadius: '50%',
+    animation: 'spin 0.8s linear infinite',
+  },
 };
+
+// Add animation
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 export default UploadForm;

@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import { FiAlertTriangle, FiBarChart2, FiCheckCircle, FiTarget } from 'react-icons/fi';
 import ResultCard from '../components/ResultCard';
 import UploadForm from '../components/UploadForm';
+import { useAuth } from '../context/AuthContext';
 import { predictionService } from '../services/api';
 function Dashboard() {
+  const { user, logout } = useAuth();
   const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);

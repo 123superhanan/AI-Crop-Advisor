@@ -1,30 +1,31 @@
-// src/components/Navbar.jsx
+// components/Navbar.jsx
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
+  const { user, logout } = useAuth();
+
   return (
     <nav style={styles.navbar}>
-      <div style={styles.container}>
-        {/* Logo */}
-        <div style={styles.logo}>AGRIVISION (web)</div>
+      <div style={styles.logo}>AgriVision</div>
 
-        {/* Navigation Links */}
-        <div style={styles.navLinks}>
-          <Link to="/" style={styles.linkActive}>
-            Dashboard
-          </Link>
-          <Link to="/history" style={styles.link}>
-            History
-          </Link>
-          <Link to="/admin" style={styles.link}>
-            Reports
-          </Link>
-        </div>
+      <div style={styles.navLinks}>
+        <Link to="/dashboard" style={styles.link}>
+          Dashboard
+        </Link>
+        <Link to="/history" style={styles.link}>
+          History
+        </Link>
+        <Link to="/admin" style={styles.link}>
+          Admin
+        </Link>
+      </div>
 
-        <div style={styles.userSection}>
-          <span style={styles.userName}>Hanan</span>
-          <div style={styles.avatar}>H</div>
-        </div>
+      <div style={styles.userSection}>
+        <span style={styles.userName}>Welcome, {user?.name}</span>
+        <button onClick={logout} style={styles.logoutBtn}>
+          Logout
+        </button>
       </div>
     </nav>
   );
@@ -32,89 +33,45 @@ const Navbar = () => {
 
 const styles = {
   navbar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '15px 30px',
     backgroundColor: '#1a1a1a',
     borderBottom: '1px solid #333',
-    padding: '1rem 5%',
-    position: 'sticky',
-    top: 0,
-    zIndex: 1000,
   },
-
-  container: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
   logo: {
-    fontSize: '26px',
-    fontWeight: '900',
-    letterSpacing: '2px',
-    color: '#ffffff',
+    fontSize: '24px',
+    fontWeight: 'bold',
+    color: '#00ff88',
   },
-
   navLinks: {
     display: 'flex',
-    gap: '2.5rem',
-  },
-
-  link: {
-    color: '#aaaaaa',
-    textDecoration: 'none',
-    fontWeight: '500',
-    fontSize: '1.02rem',
-  },
-
-  linkActive: {
-    color: '#ffffff',
-    textDecoration: 'none',
-    fontWeight: '600',
-    fontSize: '1.02rem',
-    borderBottom: '2px solid #0066ff',
-    paddingBottom: '4px',
-  },
-
-  rightSection: {
-    display: 'flex',
-    alignItems: 'center',
     gap: '20px',
   },
-
-  newAnalysisBtn: {
-    backgroundColor: '#0066ff',
-    color: 'white',
-    border: 'none',
-    padding: '10px 24px',
+  link: {
+    color: '#fff',
+    textDecoration: 'none',
+    padding: '8px 16px',
     borderRadius: '6px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    fontSize: '0.95rem',
+    transition: 'background 0.2s',
   },
-
   userSection: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '15px',
   },
-
   userName: {
     color: '#ccc',
-    fontSize: '0.95rem',
+    fontSize: '14px',
   },
-
-  avatar: {
-    width: '42px',
-    height: '42px',
-    backgroundColor: '#444',
+  logoutBtn: {
+    backgroundColor: '#ff4444',
     color: '#fff',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 'bold',
-    fontSize: '1rem',
+    border: 'none',
+    padding: '6px 12px',
+    borderRadius: '6px',
+    cursor: 'pointer',
   },
 };
 

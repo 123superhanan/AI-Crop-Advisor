@@ -1,5 +1,5 @@
 // src/components/UploadForm.jsx
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { predictionService } from '../services/api';
 
 const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
@@ -13,7 +13,18 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
   const [weather, setWeather] = useState('normal');
   const [temperature, setTemperature] = useState(25);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const fileInputRef = useRef(null);
+  let closeTimer = useRef(null);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) {
+        clearTimeout(closeTimer.current);
+      }
+    };
+  }, []);
 
   const handleDrag = e => {
     e.preventDefault();
@@ -37,6 +48,7 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
         setPreview(URL.createObjectURL(file));
         setError('');
         setAnalysisResult(null);
+        setShowSuccess(false);
       } else {
         setError('Please upload an image file');
       }
@@ -50,7 +62,15 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
       setPreview(URL.createObjectURL(file));
       setError('');
       setAnalysisResult(null);
+      setShowSuccess(false);
     }
+  };
+
+  const handleClose = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+    }
+    onClose();
   };
 
   const handleSubmit = async e => {
@@ -75,6 +95,7 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
     try {
       const result = await predictionService.analyzeImage(formData);
       setAnalysisResult(result);
+      setShowSuccess(true);
 
       if (result.success) {
         await predictionService.savePrediction({
@@ -86,17 +107,15 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
           recommendations: result.recommendations,
         });
 
-        // Check if onSuccess is a function before calling
+        // Refresh dashboard data
         if (onSuccess && typeof onSuccess === 'function') {
-          setTimeout(() => {
-            onSuccess();
-            onClose();
-          }, 2000);
-        } else {
-          setTimeout(() => {
-            onClose();
-          }, 2000);
+          await onSuccess();
         }
+
+        // Set timer to auto-close after showing results (5 seconds)
+        closeTimer.current = setTimeout(() => {
+          onClose();
+        }, 5000); // Show results for 5 seconds
       }
     } catch (err) {
       console.error(err);
@@ -110,18 +129,29 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
     setImage(null);
     setPreview(null);
     setAnalysisResult(null);
+    setShowSuccess(false);
     setError('');
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
+  const handleManualClose = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+    }
+    onClose();
+  };
+
   return (
-    <div style={styles.overlay} onClick={onClose}>
+    <div style={styles.overlay} onClick={handleManualClose}>
       <div style={styles.modal} onClick={e => e.stopPropagation()}>
         <div style={styles.header}>
           <h2 style={styles.headerTitle}>New Crop Analysis</h2>
-          <button style={styles.closeBtn} onClick={onClose}>
+          <button style={styles.closeBtn} onClick={handleManualClose}>
             ×
           </button>
         </div>
@@ -133,12 +163,13 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
               ...styles.uploadCard,
               ...(dragActive && styles.uploadCardDrag),
               ...(preview && styles.uploadCardWithPreview),
+              ...(analysisResult && styles.uploadCardSuccess),
             }}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            onClick={() => !preview && fileInputRef.current?.click()}
+            onClick={() => !preview && !analysisResult && fileInputRef.current?.click()}
           >
             {!preview ? (
               <div style={styles.uploadContent}>
@@ -167,28 +198,31 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
             ) : (
               <div style={styles.previewContainer}>
                 <img src={preview} alt="Preview" style={styles.previewImage} />
-                <div style={styles.previewOverlay}>
-                  <button
-                    type="button"
-                    style={styles.changeBtn}
-                    onClick={e => {
-                      e.stopPropagation();
-                      resetForm();
-                    }}
-                  >
-                    Change Image
-                  </button>
-                </div>
+                {!analysisResult && (
+                  <div style={styles.previewOverlay}>
+                    <button
+                      type="button"
+                      style={styles.changeBtn}
+                      onClick={e => {
+                        e.stopPropagation();
+                        resetForm();
+                      }}
+                    >
+                      Change Image
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Analysis Result Display */}
+          {/* Analysis Result Display - Stays visible */}
           {analysisResult && (
             <div style={styles.resultCard}>
               <div style={styles.resultHeader}>
-                <span style={styles.resultIcon}>✓</span>
-                <span style={styles.resultTitle}>Analysis Complete!</span>
+                <div style={styles.resultIcon}>✓</div>
+                <div style={styles.resultTitle}>Analysis Complete!</div>
+                <div style={styles.autoCloseTimer}>Closing in 5s...</div>
               </div>
               <div style={styles.resultContent}>
                 <div style={styles.resultDisease}>
@@ -203,107 +237,123 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
                   <span
                     style={{
                       ...styles.severityBadge,
-                      backgroundColor: analysisResult.severity === 'High' ? '#ff4444' : '#ffaa00',
+                      backgroundColor:
+                        analysisResult.severity === 'High'
+                          ? '#ff4444'
+                          : analysisResult.severity === 'Critical'
+                            ? '#ff0000'
+                            : '#ffaa00',
                     }}
                   >
                     {analysisResult.severity}
                   </span>
                 </div>
                 <div style={styles.resultTreatment}>
-                  <strong>Recommended:</strong> {analysisResult.recommendations.treatment_plan?.[0]}
+                  <strong>Treatment:</strong> {analysisResult.recommendations.treatment_plan?.[0]}
                 </div>
               </div>
-              <div style={styles.resultFooter}>Saving to dashboard...</div>
+              <div style={styles.resultFooter}>
+                <button style={styles.closeResultBtn} onClick={handleManualClose}>
+                  Close & Go to Dashboard
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Farm Conditions Section */}
-          <div style={styles.conditionsSection}>
-            <h3 style={styles.sectionTitle}>Farm Conditions</h3>
-            <div style={styles.conditionsGrid}>
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Crop Type</label>
-                <select
-                  value={cropType}
-                  onChange={e => setCropType(e.target.value)}
-                  style={styles.select}
-                  disabled={loading}
-                >
-                  <option value="general">General Crop</option>
-                  <option value="wheat">Wheat</option>
-                  <option value="rice">Rice</option>
-                  <option value="corn">Corn</option>
-                  <option value="tomato">Tomato</option>
-                  <option value="potato">Potato</option>
-                  <option value="cotton">Cotton</option>
-                </select>
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Weather</label>
-                <select
-                  value={weather}
-                  onChange={e => setWeather(e.target.value)}
-                  style={styles.select}
-                  disabled={loading}
-                >
-                  <option value="normal">Normal</option>
-                  <option value="rainy">Rainy</option>
-                  <option value="dry">Dry</option>
-                  <option value="humid">Humid</option>
-                </select>
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Temperature (°C)</label>
-                <input
-                  type="number"
-                  value={temperature}
-                  onChange={e => setTemperature(e.target.value)}
-                  style={styles.input}
-                  disabled={loading}
-                />
-              </div>
-
-              <div style={styles.checkboxGroup}>
-                <label style={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={organicFarming}
-                    onChange={e => setOrganicFarming(e.target.checked)}
+          {/* Farm Conditions Section - Hide after analysis */}
+          {!analysisResult && (
+            <div style={styles.conditionsSection}>
+              <h3 style={styles.sectionTitle}>Farm Conditions</h3>
+              <div style={styles.conditionsGrid}>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Crop Type</label>
+                  <select
+                    value={cropType}
+                    onChange={e => setCropType(e.target.value)}
+                    style={styles.select}
                     disabled={loading}
-                    style={styles.checkbox}
+                  >
+                    <option value="general">General Crop</option>
+                    <option value="wheat">Wheat</option>
+                    <option value="rice">Rice</option>
+                    <option value="corn">Corn</option>
+                    <option value="tomato">Tomato</option>
+                    <option value="potato">Potato</option>
+                    <option value="cotton">Cotton</option>
+                  </select>
+                </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Weather</label>
+                  <select
+                    value={weather}
+                    onChange={e => setWeather(e.target.value)}
+                    style={styles.select}
+                    disabled={loading}
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="rainy">Rainy</option>
+                    <option value="dry">Dry</option>
+                    <option value="humid">Humid</option>
+                  </select>
+                </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Temperature (°C)</label>
+                  <input
+                    type="number"
+                    value={temperature}
+                    onChange={e => setTemperature(e.target.value)}
+                    style={styles.input}
+                    disabled={loading}
                   />
-                  Organic Farming Practice
-                </label>
+                </div>
+
+                <div style={styles.checkboxGroup}>
+                  <label style={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={organicFarming}
+                      onChange={e => setOrganicFarming(e.target.checked)}
+                      disabled={loading}
+                      style={styles.checkbox}
+                    />
+                    Organic Farming Practice
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {error && (
             <div style={styles.errorCard}>
               <span style={styles.errorIcon}>!</span>
               <span style={styles.errorText}>{error}</span>
+              <button style={styles.retryBtn} onClick={() => setError('')}>
+                Dismiss
+              </button>
             </div>
           )}
 
-          <button
-            type="submit"
-            style={{
-              ...styles.submitBtn,
-              ...(loading && styles.submitBtnDisabled),
-            }}
-            disabled={loading || !image}
-          >
-            {loading ? (
-              <span style={styles.loadingSpinner}>
-                <span style={styles.spinner}></span>
-                Analyzing...
-              </span>
-            ) : (
-              'Start Analysis'
-            )}
-          </button>
+          {!analysisResult && (
+            <button
+              type="submit"
+              style={{
+                ...styles.submitBtn,
+                ...(loading && styles.submitBtnDisabled),
+              }}
+              disabled={loading || !image}
+            >
+              {loading ? (
+                <span style={styles.loadingSpinner}>
+                  <span style={styles.spinner}></span>
+                  Analyzing...
+                </span>
+              ) : (
+                'Start Analysis'
+              )}
+            </button>
+          )}
         </form>
       </div>
     </div>
@@ -387,6 +437,10 @@ const styles = {
     border: 'none',
     backgroundColor: 'transparent',
   },
+  uploadCardSuccess: {
+    borderColor: '#00ff88',
+    backgroundColor: '#0a1a0a',
+  },
   uploadContent: {
     textAlign: 'center',
     padding: '60px 40px',
@@ -447,6 +501,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0,
+    transition: 'opacity 0.3s',
   },
   changeBtn: {
     backgroundColor: '#fff',
@@ -460,24 +515,30 @@ const styles = {
   },
   resultCard: {
     backgroundColor: '#00ff8811',
-    border: '1px solid #00ff88',
+    border: '2px solid #00ff88',
     borderRadius: '12px',
     padding: '20px',
     marginBottom: '25px',
+    animation: 'slideIn 0.5s ease',
   },
   resultHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    justifyContent: 'space-between',
     marginBottom: '15px',
   },
   resultIcon: {
     fontSize: '24px',
+    color: '#00ff88',
   },
   resultTitle: {
     fontSize: '18px',
     fontWeight: 'bold',
     color: '#00ff88',
+  },
+  autoCloseTimer: {
+    fontSize: '12px',
+    color: '#888',
   },
   resultContent: {
     display: 'flex',
@@ -504,17 +565,26 @@ const styles = {
     marginLeft: '10px',
     fontSize: '12px',
     fontWeight: 'bold',
+    color: '#fff',
   },
   resultTreatment: {
     fontSize: '14px',
     color: '#ddd',
   },
   resultFooter: {
-    fontSize: '12px',
-    color: '#888',
-    textAlign: 'center',
-    paddingTop: '10px',
+    paddingTop: '15px',
     borderTop: '1px solid #00ff8822',
+    textAlign: 'center',
+  },
+  closeResultBtn: {
+    backgroundColor: '#00ff88',
+    color: '#000',
+    border: 'none',
+    padding: '12px 24px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
   },
   conditionsSection: {
     marginBottom: '25px',
@@ -584,10 +654,20 @@ const styles = {
   },
   errorIcon: {
     fontSize: '20px',
+    color: '#ff4444',
   },
   errorText: {
     color: '#ff8888',
     fontSize: '14px',
+    flex: 1,
+  },
+  retryBtn: {
+    backgroundColor: '#ff4444',
+    color: '#fff',
+    border: 'none',
+    padding: '4px 12px',
+    borderRadius: '4px',
+    cursor: 'pointer',
   },
   submitBtn: {
     width: '100%',
@@ -627,6 +707,21 @@ styleSheet.textContent = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .preview-overlay:hover {
+    opacity: 1;
   }
 `;
 document.head.appendChild(styleSheet);

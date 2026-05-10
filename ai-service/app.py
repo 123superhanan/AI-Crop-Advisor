@@ -1,4 +1,4 @@
-# app.py - Complete working version
+# app.py - Complete working version with validation
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import numpy as np
@@ -6,7 +6,7 @@ from PIL import Image
 import io
 import random
 import traceback
-import sys
+import cv2
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -83,6 +83,46 @@ TREATMENT_DB = {
     }
 }
 
+def validate_image_quality(img):
+    """Check if image is suitable for plant disease detection"""
+    # Check image size
+    if img.size[0] < 50 or img.size[1] < 50:
+        return False, "Image too small. Please upload a clearer picture."
+    
+    # Check if image has color (not grayscale)
+    if img.mode != 'RGB' and img.mode != 'RGBA':
+        return False, "Please upload a color image."
+    
+    return True, "Valid image"
+
+def detect_if_leaf(img):
+    """Simple detection to check if image likely contains a leaf"""
+    # Convert to RGB if needed
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+    
+    # Convert to numpy array
+    img_array = np.array(img)
+    
+    # Convert to HSV for green detection
+    hsv = cv2.cvtColor(img_array, cv2.COLOR_RGB2HSV)
+    
+    # Define green color range
+    lower_green = np.array([35, 40, 40])
+    upper_green = np.array([85, 255, 255])
+    
+    # Create mask for green areas
+    green_mask = cv2.inRange(hsv, lower_green, upper_green)
+    green_percentage = (np.sum(green_mask > 0) / green_mask.size) * 100
+    
+    # Decision logic
+    is_likely_leaf = green_percentage > 10
+    
+    if not is_likely_leaf:
+        return False, f"Image doesn't appear to be a plant leaf (only {green_percentage:.1f}% green area)"
+    
+    return True, f"Valid leaf detected"
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
@@ -94,7 +134,7 @@ def health():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Prediction endpoint"""
+    """Prediction endpoint with image validation"""
     try:
         print("\n" + "="*50)
         print("PREDICTION REQUEST RECEIVED")
@@ -102,13 +142,11 @@ def predict():
         
         # Check if image was uploaded
         if 'image' not in request.files:
-            print("ERROR: No image in request")
             return jsonify({'error': 'No image provided'}), 400
         
         file = request.files['image']
         
         if file.filename == '':
-            print("ERROR: Empty filename")
             return jsonify({'error': 'No image selected'}), 400
         
         print(f"File received: {file.filename}")
@@ -119,8 +157,26 @@ def predict():
             img = Image.open(io.BytesIO(image_bytes))
             print(f"Image loaded: Size={img.size}, Mode={img.mode}")
             
-            # Resize image to standard size
-            img = img.resize((224, 224))
+            # Validate image quality
+            is_valid, quality_msg = validate_image_quality(img)
+            if not is_valid:
+                return jsonify({
+                    'success': False,
+                    'error': quality_msg,
+                    'suggestion': 'Please upload a clear, well-lit photo of a plant leaf'
+                }), 400
+            
+            # Check if image contains leaf
+            is_leaf, leaf_msg = detect_if_leaf(img)
+            if not is_leaf:
+                return jsonify({
+                    'success': False,
+                    'error': leaf_msg,
+                    'suggestion': 'Please upload a photo of a plant leaf for accurate disease detection'
+                }), 400
+            
+            # Resize for model
+            img_resized = img.resize((224, 224))
             
         except Exception as e:
             print(f"Image processing error: {str(e)}")
@@ -136,19 +192,17 @@ def predict():
         
         # SIMULATE MODEL PREDICTION
         # Replace this with your actual model prediction
-        # For now, it randomly selects a disease based on image characteristics
-        random.seed(hash(str(image_bytes[:100])) % 2**32)  # Seed based on image
+        random.seed(hash(str(image_bytes[:100])) % 2**32)
         predicted_idx = random.randint(0, len(DISEASE_CLASSES) - 1)
         
-        # Adjust probability based on crop type
+        # Adjust based on crop type
         if crop_type in ['tomato', 'potato']:
-            # These crops are more prone to blight
-            if predicted_idx in [0, 5, 6]:  # Healthy, Early/Late Blight
+            if predicted_idx in [0, 5, 6]:
                 predicted_idx = 5 if random.random() > 0.5 else 6
         
         disease = DISEASE_CLASSES[predicted_idx]
         
-        # Generate confidence score (realistic range)
+        # Generate confidence score
         if disease == 'Healthy':
             confidence = random.uniform(0.85, 0.98)
         else:
@@ -159,12 +213,12 @@ def predict():
         # Get treatment recommendations
         treatment = TREATMENT_DB.get(disease, TREATMENT_DB['Healthy'])
         
-        # Build recommendations based on conditions
+        # Build recommendations
         recommendations = {
             'disease': disease,
             'confidence': f"{confidence:.1%}",
             'severity': treatment['severity'],
-            'priority': '🔴 URGENT' if treatment['urgency'] == 1 else '🟡 MEDIUM' if treatment['urgency'] == 2 else '🟢 LOW',
+            'priority': 'URGENT' if treatment['urgency'] == 1 else 'MEDIUM' if treatment['urgency'] == 2 else 'LOW',
             'immediate_action': [],
             'treatment_plan': [],
             'prevention_tips': []
@@ -172,33 +226,33 @@ def predict():
         
         # Add immediate actions based on severity
         if treatment['urgency'] == 1:
-            recommendations['immediate_action'].append("⚠️ Immediate action recommended")
-            recommendations['immediate_action'].append("📞 Consider consulting an agricultural officer")
+            recommendations['immediate_action'].append("Immediate action recommended")
+            recommendations['immediate_action'].append("Consider consulting an agricultural officer")
         
         # Add treatment based on farming method
         if organic_farming:
-            recommendations['treatment_plan'].append(f"🌿 Organic Treatment: {treatment['organic']}")
-            recommendations['treatment_plan'].append("✅ Reapply every 7-10 days")
+            recommendations['treatment_plan'].append(f"Organic Treatment: {treatment['organic']}")
+            recommendations['treatment_plan'].append("Reapply every 7-10 days")
         else:
-            recommendations['treatment_plan'].append(f"💊 Chemical Treatment: {treatment['chemical']}")
-            recommendations['treatment_plan'].append("⚠️ Follow safety guidelines when applying")
+            recommendations['treatment_plan'].append(f"Chemical Treatment: {treatment['chemical']}")
+            recommendations['treatment_plan'].append("Follow safety guidelines when applying")
         
         # Weather-based adjustments
         if weather == 'rainy':
-            recommendations['treatment_plan'].append("☔ Rain expected - reapply after rainfall")
+            recommendations['treatment_plan'].append("Rain expected - reapply after rainfall")
         elif weather == 'dry':
-            recommendations['treatment_plan'].append("💧 Irrigate before treatment for better absorption")
+            recommendations['treatment_plan'].append("Irrigate before treatment for better absorption")
         
         # Temperature-based adjustments
         if temperature > 30:
-            recommendations['treatment_plan'].append("🌡️ Apply treatment in early morning or evening")
+            recommendations['treatment_plan'].append("Apply treatment in early morning or evening")
         
         # Add prevention tips
         recommendations['prevention_tips'].extend([
-            f"🛡️ {treatment['prevention']}",
-            "🌾 Practice crop rotation every season",
-            "💧 Avoid overhead irrigation",
-            "🧹 Remove and destroy infected plant debris"
+            f"{treatment['prevention']}",
+            "Practice crop rotation every season",
+            "Avoid overhead irrigation",
+            "Remove and destroy infected plant debris"
         ])
         
         # Prepare response
@@ -211,7 +265,11 @@ def predict():
             },
             'recommendations': recommendations,
             'treatment_path': recommendations['treatment_plan'],
-            'severity': treatment['severity']
+            'severity': treatment['severity'],
+            'validation': {
+                'quality_check': quality_msg,
+                'leaf_check': leaf_msg
+            }
         }
         
         print("Response prepared successfully")
@@ -226,21 +284,16 @@ def predict():
 
 @app.route('/predict-with-model', methods=['POST'])
 def predict_with_model():
-    """Endpoint that actually uses your .h5 model file"""
+    """Endpoint that uses your .h5 model file"""
     try:
         # Try to load your model
         try:
             from tensorflow.keras.models import load_model
-            import tensorflow as tf
-            
-            # Load your model
             model = load_model('plant_disease_model.h5')
             print("Model loaded successfully")
-            
         except Exception as e:
             print(f"Could not load model: {str(e)}")
-            # Fall back to simulation
-            return predict()
+            return predict()  # Fall back to simulation
         
         # Check if image was uploaded
         if 'image' not in request.files:
@@ -248,8 +301,17 @@ def predict_with_model():
         
         file = request.files['image']
         
-        # Process image for model
+        # Validate image first
         img = Image.open(io.BytesIO(file.read()))
+        is_valid, quality_msg = validate_image_quality(img)
+        if not is_valid:
+            return jsonify({'error': quality_msg}), 400
+        
+        is_leaf, leaf_msg = detect_if_leaf(img)
+        if not is_leaf:
+            return jsonify({'error': leaf_msg}), 400
+        
+        # Process for model
         img = img.resize((224, 224))
         img_array = np.array(img) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
@@ -261,7 +323,7 @@ def predict_with_model():
         
         disease = DISEASE_CLASSES[predicted_class]
         
-        # Get parameters and build response (same as above)
+        # Get parameters
         crop_type = request.form.get('cropType', 'general')
         organic_farming = request.form.get('organicFarming', 'false').lower() == 'true'
         weather = request.form.get('weather', 'normal')
@@ -297,9 +359,8 @@ def predict_with_model():
 
 if __name__ == '__main__':
     print("\n" + "="*50)
-    print("🌱 AI CROP ADVISOR - PREDICTION SERVICE")
+    print("AI CROP ADVISOR - PREDICTION SERVICE")
     print("="*50)
-    
     print(f"Server running on: http://localhost:5001")
     print(f"Health check: http://localhost:5001/health")
     print(f"Test prediction: http://localhost:5001/predict")

@@ -14,6 +14,8 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
   const [temperature, setTemperature] = useState(25);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const [errorType, setErrorType] = useState('');
   const fileInputRef = useRef(null);
   let closeTimer = useRef(null);
 
@@ -82,6 +84,7 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
 
     setLoading(true);
     setError('');
+    setErrorType('');
     setAnalysisResult(null);
 
     const formData = new FormData();
@@ -94,37 +97,54 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
 
     try {
       const result = await predictionService.analyzeImage(formData);
+
+      // Check if analysis failed (validation error)
+      if (!result.success) {
+        setErrorType(result.error_type || 'validation');
+        setError(result.error || result.suggestion || 'Analysis failed');
+        setLoading(false);
+        return;
+      }
+
+      // Analysis successful
       setAnalysisResult(result);
       setShowSuccess(true);
 
-      if (result.success) {
-        await predictionService.savePrediction({
-          userId: userId,
-          crop: result.prediction.crop,
-          disease: result.prediction.disease,
-          confidence: result.prediction.confidence,
-          severity: result.severity,
-          recommendations: result.recommendations,
-        });
+      // Save to database
+      await predictionService.savePrediction({
+        userId: userId,
+        crop: result.prediction.crop,
+        disease: result.prediction.disease,
+        confidence: result.prediction.confidence,
+        severity: result.severity,
+        recommendations: result.recommendations,
+      });
 
-        // Refresh dashboard data
-        if (onSuccess && typeof onSuccess === 'function') {
-          await onSuccess();
-        }
-
-        // Set timer to auto-close after showing results (5 seconds)
-        closeTimer.current = setTimeout(() => {
-          onClose();
-        }, 5000); // Show results for 5 seconds
+      // Refresh dashboard data
+      if (onSuccess && typeof onSuccess === 'function') {
+        await onSuccess();
       }
+
+      // Set timer to auto-close after showing results (5 seconds)
+      if (closeTimer.current) {
+        clearTimeout(closeTimer.current);
+      }
+      closeTimer.current = setTimeout(() => {
+        onClose();
+      }, 5000);
     } catch (err) {
       console.error(err);
-      setError('Failed to analyze image. Please try again.');
+      // Handle network/server errors
+      const errorMsg =
+        err.response?.data?.error ||
+        err.response?.data?.suggestion ||
+        'Failed to analyze image. Please try again.';
+      setError(errorMsg);
+      setErrorType('general');
     } finally {
       setLoading(false);
     }
   };
-
   const resetForm = () => {
     setImage(null);
     setPreview(null);
@@ -326,15 +346,35 @@ const UploadForm = ({ onClose, onSuccess, userId = 'anonymous' }) => {
           )}
 
           {error && (
-            <div style={styles.errorCard}>
-              <span style={styles.errorIcon}>!</span>
-              <span style={styles.errorText}>{error}</span>
-              <button style={styles.retryBtn} onClick={() => setError('')}>
-                Dismiss
-              </button>
+            <div
+              style={{
+                ...styles.errorCard,
+                backgroundColor:
+                  errorType === 'quality'
+                    ? '#ff444411'
+                    : errorType === 'leaf'
+                      ? '#ffaa0011'
+                      : '#ff444411',
+              }}
+            >
+              <span style={styles.errorIcon}>
+                {errorType === 'quality' ? '📷' : errorType === 'leaf' ? '🌿' : '⚠️'}
+              </span>
+              <div style={styles.errorContent}>
+                <div style={styles.errorText}>{error}</div>
+                {errorType === 'leaf' && (
+                  <div style={styles.errorSuggestion}>
+                    💡 Tip: Take a photo of a single leaf against a plain background
+                  </div>
+                )}
+                {errorType === 'quality' && (
+                  <div style={styles.errorSuggestion}>
+                    💡 Tip: Ensure good lighting and hold the camera steady
+                  </div>
+                )}
+              </div>
             </div>
           )}
-
           {!analysisResult && (
             <button
               type="submit"

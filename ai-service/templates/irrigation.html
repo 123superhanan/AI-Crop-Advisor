@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Irrigation Advisor - AgriVision AI</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="navigation">
+        <a href="/" class="back-btn">← Return to Dashboard</a>
+      </nav>
+
+      <div class="form-wrapper">
+        <div class="form-header">
+          <h2>Irrigation Advisor</h2>
+          <p class="subtitle">
+            Calculate predictive water schedules using real-time field attributes
+          </p>
+        </div>
+
+        <div class="form-card">
+          <form id="irrigationForm">
+            <div class="form-group">
+              <label for="soilMoisture">Current Soil Moisture (%)</label>
+              <input type="range" id="soilMoisture" min="0" max="100" value="35" />
+              <output id="moistureValue" class="range-value">35%</output>
+            </div>
+
+            <div class="form-group">
+              <label for="soilType">Soil Structural Profile</label>
+              <select id="soilType">
+                <option value="sandy">Sandy / Coarse Texture</option>
+                <option value="loam">Loam / Balanced Medium</option>
+                <option value="clay">Clay / Heavy Fine Texture</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="temperature">Ambient Field Temperature (°C)</label>
+              <input
+                type="number"
+                id="temperature"
+                min="-10"
+                max="55"
+                placeholder="e.g. 32"
+                required
+              />
+            </div>
+
+            <button type="button" class="btn-submit btn-water" onclick="predictIrrigation()">
+              Compute Water Schedule
+            </button>
+          </form>
+
+          <div id="result" class="result result-water" style="display: none"></div>
+        </div>
+      </div>
+    </div>
+    <script src="/static/js/main.js"></script>
+  </body>
+</html>

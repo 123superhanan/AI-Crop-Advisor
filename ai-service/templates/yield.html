@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yield Predictor - AgriVision AI</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="navigation">
+        <a href="/" class="back-btn">← Return to Dashboard</a>
+      </nav>
+
+      <div class="form-wrapper">
+        <div class="form-header">
+          <h2>Yield Predictor</h2>
+          <p class="subtitle">Project metrics based on farm scale and input distribution</p>
+        </div>
+
+        <div class="form-card">
+          <form id="yieldForm">
+            <div class="form-group">
+              <label for="farmSize">Cultivated Land Area (Acres)</label>
+              <input
+                type="number"
+                id="farmSize"
+                step="0.1"
+                min="0.1"
+                placeholder="e.g. 12.5"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="fertilizer">Fertilizer Application Density (kg/Acre)</label>
+              <input type="number" id="fertilizer" min="0" placeholder="e.g. 150" required />
+            </div>
+
+            <div class="form-group">
+              <label for="rainfall">Historical Seasonal Rainfall Estimation (mm)</label>
+              <input type="number" id="rainfall" min="0" placeholder="e.g. 450" required />
+            </div>
+
+            <button type="button" class="btn-submit btn-yield" onclick="predictYield()">
+              Calculate Expected Harvest
+            </button>
+          </form>
+
+          <div id="result" class="result result-yield" style="display: none"></div>
+        </div>
+      </div>
+    </div>
+    <script src="/static/js/main.js"></script>
+  </body>
+</html>

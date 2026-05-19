@@ -1,0 +1,491 @@
+:root {
+  /* System Foundations */
+  --surface-bg: #0b0f12;
+  --surface-card: #161d24;
+  --surface-input: #1f2833;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+
+  /* Text Contrast Hierarchy */
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-disabled: #64748b;
+
+  /* UX Interaction States */
+  --interactive-focus: #22c55e; /* Reassuring green for completion & activation */
+  --interactive-hover: #334155;
+
+  /* Muted Nature/Crop Palette */
+  --crop-tomato: #ef4444;
+  --crop-water: #3b82f6;
+  --crop-potato: #f59e0b;
+  --crop-wheat: #eab308;
+}
+
+/* 1. Core Reset & Typography */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--surface-bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* Custom layout constraint for step-by-step entry cards */
+.custom-container-small {
+  max-width: 620px;
+}
+
+/* 2. Structured Headers */
+.main-header,
+.form-header {
+  margin-bottom: 40px;
+}
+
+.text-center {
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+/* 3. Intuitive Dashboard Cards Layout */
+.grid,
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.card,
+.action-card {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 32px;
+  text-decoration: none;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 240px;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s ease;
+}
+
+.card:hover,
+.action-card:hover {
+  transform: translateY(-4px);
+  background-color: rgba(22, 29, 36, 0.8);
+}
+
+.card p,
+.action-card p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Color Coding Themes for Dashboard Paths */
+.card:nth-child(1):hover,
+.color-tomato:hover {
+  border-color: var(--crop-tomato);
+}
+.card:nth-child(1) .card-footer-link,
+.color-tomato .card-footer-link {
+  color: var(--crop-tomato);
+}
+
+.card:nth-child(2):hover,
+.color-water:hover {
+  border-color: var(--crop-water);
+}
+.card:nth-child(2) .card-footer-link,
+.color-water .card-footer-link {
+  color: var(--crop-water);
+}
+
+.card:nth-child(3):hover,
+.color-pest:hover {
+  border-color: var(--crop-potato);
+}
+.card:nth-child(3) .card-footer-link,
+.color-pest .card-footer-link {
+  color: var(--crop-potato);
+}
+
+.card:nth-child(4):hover,
+.color-yield:hover {
+  border-color: var(--crop-wheat);
+}
+.card:nth-child(4) .card-footer-link,
+.color-yield .card-footer-link {
+  color: var(--crop-wheat);
+}
+
+.card-footer-link {
+  margin-top: 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* 4. Navigation Links */
+.navigation {
+  margin-bottom: 24px;
+}
+
+.back-btn {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.back-btn:hover {
+  color: #ffffff;
+}
+
+/* 5. User-Friendly Form Architecture */
+.form-card,
+.form-card-ux {
+  background-color: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  padding: 40px;
+  border-radius: 20px;
+}
+
+.form-group,
+.ux-step-group {
+  margin-bottom: 32px;
+}
+
+/* Visual grouping step workflow badges */
+.step-badge {
+  display: inline-block;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 30px;
+  margin-bottom: 10px;
+}
+
+label,
+.ux-label {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+/* Input Fields & Touch Areas */
+input[type='text'],
+input[type='number'],
+select {
+  width: 100%;
+  padding: 14px 16px;
+  background-color: var(--surface-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--interactive-focus);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+/* Beginner-Friendly Tap/Click Selection Tiles (Replaces small dropdown items) */
+.ux-radio-tile-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 540px) {
+  .ux-radio-tile-group:not(.halves) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.tile-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.tile-option input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.tile-card {
+  display: block;
+  background-color: var(--surface-input);
+  border: 1px solid var(--border-subtle);
+  padding: 16px 12px;
+  text-align: center;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tile-option:hover .tile-card {
+  border-color: var(--text-disabled);
+  color: #ffffff;
+}
+
+.tile-option input:checked + .tile-card {
+  background-color: rgba(34, 197, 94, 0.1);
+  border-color: var(--interactive-focus);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Dropzone Upload Layout styling */
+.upload-dropzone {
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 36px 20px;
+  text-align: center;
+  background-color: var(--surface-input);
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.upload-dropzone:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.upload-dropzone input[type='file'] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-hint {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* User-Friendly Thicker Slide Tracks */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px; /* Thicker track is easier to read and tap */
+  background: var(--surface-input);
+  border-radius: 4px;
+  outline: none;
+  margin: 16px 0 8px 0;
+  border: none;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px; /* Oversized slider handle for easy touch access */
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s ease;
+}
+
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.range-value {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--interactive-focus);
+  text-align: right;
+}
+
+/* 6. Primary Action Controls */
+button,
+.btn-submit,
+.btn-ux-submit {
+  width: 100%;
+  padding: 16px;
+  background-color: #ffffff;
+  color: var(--surface-bg);
+  border: none;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    opacity 0.15s ease,
+    transform 0.1s ease;
+  margin-top: 8px;
+}
+
+button:hover,
+.btn-submit:hover,
+.btn-ux-submit:hover {
+  opacity: 0.92;
+}
+
+button:active,
+.btn-submit:active,
+.btn-ux-submit:active {
+  transform: scale(0.99);
+}
+
+/* Sub-page Specific Submission Button colors */
+.btn-water {
+  background-color: var(--crop-water);
+  color: #ffffff;
+}
+.btn-pest {
+  background-color: var(--crop-potato);
+  color: #ffffff;
+}
+.btn-yield {
+  background-color: var(--crop-wheat);
+  color: var(--surface-bg);
+}
+
+/* 7. Reassuring Dynamic Response Panels */
+.result,
+.ux-result-card {
+  margin-top: 32px;
+  padding: 24px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--interactive-focus);
+}
+
+.result-water {
+  border-left-color: var(--crop-water);
+}
+.result-pest {
+  border-left-color: var(--crop-potato);
+}
+.result-yield {
+  border-left-color: var(--crop-wheat);
+}
+
+.result h3,
+.result-status-header h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.result p,
+.result-body-content {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* Visual Warnings & Error Boundaries */
+.error {
+  color: var(--crop-tomato);
+  border-left-color: var(--crop-tomato);
+  background-color: rgba(239, 68, 68, 0.03);
+}
+
+.error-border {
+  border-color: var(--crop-tomato);
+}
+
+/* Clean Micro-Loading spinner overlay */
+.loading {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 8. Mobile Breakpoints */
+@media (max-width: 680px) {
+  .container {
+    padding: 32px 16px;
+  }
+  h1 {
+    font-size: 2rem;
+  }
+  .form-card,
+  .form-card-ux {
+    padding: 24px;
+  }
+}

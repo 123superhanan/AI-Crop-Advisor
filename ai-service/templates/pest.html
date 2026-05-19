@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pest Risk Matrix - AgriVision AI</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="navigation">
+        <a href="/" class="back-btn">← Return to Dashboard</a>
+      </nav>
+
+      <div class="form-wrapper">
+        <div class="form-header">
+          <h2>Pest Risk Matrix</h2>
+          <p class="subtitle">
+            Evaluate dynamic atmospheric vectors to predict pathogen distribution
+          </p>
+        </div>
+
+        <div class="form-card">
+          <form id="pestForm">
+            <div class="form-group">
+              <label for="humidity">Relative Ambient Humidity (%)</label>
+              <input type="range" id="humidity" min="0" max="100" value="65" />
+              <output id="humidityValue" class="range-value">65%</output>
+            </div>
+
+            <div class="form-group">
+              <label for="cropType">Current Field Stand</label>
+              <select id="cropType">
+                <option value="wheat">Wheat Variety</option>
+                <option value="tomato">Tomato Crop</option>
+                <option value="potato">Potato Variant</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="history">Previous Pest Outbreak In Region</label>
+              <select id="history">
+                <option value="none">No recorded vector instances within 90 days</option>
+                <option value="moderate">Isolated reports in surrounding sectors</option>
+                <option value="severe">Widespread active infestations reported</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn-submit btn-pest" onclick="predictPestRisk()">
+              Run Threat Assessment
+            </button>
+          </form>
+
+          <div id="result" class="result result-pest" style="display: none"></div>
+        </div>
+      </div>
+    </div>
+    <script src="/static/js/main.js"></script>
+  </body>
+</html>

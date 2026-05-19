@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Disease Detection - AgriVision AI</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="navigation">
+        <a href="/" class="back-btn">← Return to Dashboard</a>
+      </nav>
+
+      <div class="form-wrapper">
+        <div class="form-header">
+          <h2>Plant Disease Detection</h2>
+          <p class="subtitle">Upload a leaf image for AI diagnosis (93% accuracy)</p>
+        </div>
+
+        <div class="form-card">
+          <form id="diseaseForm">
+            <div class="form-group">
+              <label for="image">Select Leaf Image</label>
+              <input type="file" id="image" accept="image/*" required />
+            </div>
+            <div class="form-group">
+              <label for="organicFarming">Treatment Preference</label>
+              <select id="organicFarming">
+                <option value="false">Chemical Treatment</option>
+                <option value="true">Organic Treatment</option>
+              </select>
+            </div>
+            <button type="button" class="btn-submit" onclick="predictDisease()">
+              Analyze Leaf
+            </button>
+          </form>
+
+          <div id="result" class="result" style="display: none"></div>
+        </div>
+      </div>
+    </div>
+    <script src="/static/js/main.js"></script>
+  </body>
+</html>

@@ -8,7 +8,7 @@ import Navbar from './components/Navbar';
 import Admin from './pages/Admin';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
-
+import Prc from './pages/prc';
 // Protected Route Component (for pages that need login)
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -35,6 +35,7 @@ function App() {
           <Routes>
             {/* Public route - Auth page */}
             <Route path="/login" element={<Auth />} />
+            <Route path="/prc" element={<Prc />} />
 
             {/* Protected routes - require login */}
             <Route
